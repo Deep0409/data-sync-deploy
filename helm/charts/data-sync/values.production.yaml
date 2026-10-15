@@ -1,0 +1,51 @@
+# Production overrides. Use together with values.yaml:
+#   -f values.yaml -f values.production.yaml
+
+config:
+  appEnv: production
+  logLevel: INFO
+  # If you move to ElastiCache, use its primary endpoint here (and enable TLS
+  # in the app if in-transit encryption is on).
+  redisHost: redis-master.data-sync.svc.cluster.local
+
+# The Secret is created by External Secrets from AWS Secrets Manager, not by
+# Helm. That keeps the password out of git and out of Helm's release history
+# (which stores rendered values in the cluster). The ExternalSecret that creates
+# it is in standard/data-sync/production/external-secret.yaml.
+secret:
+  create: false
+  existingSecret: data-sync-redis
+
+autoscaling:
+  enabled: true
+  minReplicas: 3          # one pod per AZ, so losing a zone still leaves capacity
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 60   # below the default to leave headroom while new pods start
+
+# requests == limits puts the pods in the Guaranteed QoS class: they are the last
+# to be evicted and get dedicated CPU time. The CPU request is also the 100%
+# mark the HPA measures against, so tune it from load tests.
+resources:
+  requests:
+    cpu: "2"
+    memory: 2Gi
+  limits:
+    cpu: "2"
+    memory: 2Gi
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+# Prefer different nodes for the pods (soft rule). The hard spread across zones
+# is added by the kustomize overlay in standard/data-sync/production.
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: data-sync
+              app.kubernetes.io/instance: data-sync

@@ -1,0 +1,17 @@
+{{- if .Values.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "data-sync.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "data-sync.labels" . | nindent 4 }}
+spec:
+  # Voluntary disruptions (node drains, EKS node group upgrades) must always
+  # leave at least this many pods running. Note that with a single replica this
+  # blocks drains entirely, which is why it is off in the default values.
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "data-sync.selectorLabels" . | nindent 6 }}
+{{- end }}

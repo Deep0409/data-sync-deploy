@@ -1,0 +1,11 @@
+data-sync {{ .Chart.AppVersion }} deployed to "{{ .Release.Namespace }}" (APP_ENV={{ .Values.config.appEnv }}).
+
+Try it:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "data-sync.fullname" . }} 8080:{{ .Values.service.port }}
+  curl -s localhost:8080/health
+  curl -s localhost:8080/metrics | head
+{{- if and .Values.secret.create (not .Values.secret.redisPassword) }}
+
+Warning: secret.redisPassword is empty, so the pods will use an empty Redis password.
+Pass it at deploy time: --set-file secret.redisPassword=./redis-password.txt
+{{- end }}

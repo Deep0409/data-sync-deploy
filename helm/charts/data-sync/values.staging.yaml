@@ -1,0 +1,20 @@
+# Staging overrides. Use together with values.yaml:
+#   -f values.yaml -f values.staging.yaml
+
+replicaCount: 2           # fixed, no autoscaling in staging
+
+config:
+  appEnv: staging
+  logLevel: INFO
+  redisHost: redis-master.data-sync-staging.svc.cluster.local
+
+secret:
+  create: true
+  # Left empty on purpose so no password sits in git. Pass it when deploying:
+  #   --set-file secret.redisPassword=./redis-password.txt
+  redisPassword: ""
+
+# Safe here because there are 2 replicas, so a drain can proceed one pod at a time.
+pdb:
+  enabled: true
+  minAvailable: 1
