@@ -12,10 +12,10 @@ jobs:
   helm-kustomize:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Pinned so a new Helm release can't change lint results or the
       # rendered base without a change in this repo. Bump it deliberately.
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v5
         with:
           version: v4.3.1
       - run: make lint template
@@ -26,9 +26,11 @@ jobs:
   ansible:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - run: pip install ansible-core ansible-lint
+      # Pinned for the same reason as Helm. New ansible-core releases do remove
+      # modules (2.17 dropped yum), and that shouldn't fail an unrelated PR.
+      - run: pip install ansible-core==2.21.5 ansible-lint==26.10.1
       - run: make ansible-syntax ansible-lint
