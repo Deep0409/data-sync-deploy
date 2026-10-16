@@ -100,7 +100,7 @@ The numbers I'd tune to are a guess: 99.9% availability, p95 under 200 ms, error
 - EC2: set `data_sync_repo_version` to a tag or SHA, never `main`.
 
 ### Rotating the Redis password
-Follow `DESIGN.md`, section 3. In the repo: `make secret-checksum` (it waits for External Secrets to sync and then writes the new AWS version ID), commit `patch-secret-checksum.yaml`, apply. On EC2, update the vaulted `data_sync_redis_password` and run `--tags deploy`.
+Follow `DESIGN.md`, section 3. In the repo: `make secret-checksum` (it waits for External Secrets to sync and then writes the new AWS version ID), commit `patch-secret-checksum.yaml`, apply. On EC2, update the vaulted `data_sync_redis_password` and run `--tags deploy`. Why this is a manual step, and how to automate it, is in [`DECISIONS.md`](DECISIONS.md#why-the-secret-rollout-isnt-automatic).
 
 ### Conventions
 - The overlay patches the Deployment named `data-sync`, so the Helm release has to be called `data-sync`.

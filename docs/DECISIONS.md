@@ -20,6 +20,17 @@ With `Orphan`, External Secrets still creates the Secret and keeps it in sync on
 ### Rolling pods when config or secrets change
 I looked at checksum annotations, the Reloader controller, kustomize's hashed `secretGenerator` names, and manual restarts. ConfigMap and chart-managed Secret changes use the normal `checksum/*` annotation. For the production Secret, which Helm doesn't own, the overlay carries the `SECRET_CHECKSUM` annotation the brief asks for, written by `scripts/secret-checksum.sh`. I prefer this to Reloader because the change is visible in git and goes through the usual rollout settings. The downside is that someone has to run it. If rotations get frequent, switch to Reloader.
 
+### Why the secret rollout isn't automatic
+External Secrets keeps the `data-sync-redis` Secret in sync on its own (every hour, or straight away with a forced sync). Pods don't pick that up: the password reaches them as an environment variable, which is fixed when the container starts. Something has to restart them, and in this repo that's a person running `make secret-checksum` and applying the overlay.
+
+I left it manual on purpose. The rotation happens every 90 days, so a manual step costs little. Each restart is a reviewed one-line commit, which records when the password changed. The rollout also waits until the cluster actually holds the new password. A fully automatic restart could fire while Redis still accepts only the old password, and it would then take every pod down in turn. The weak point is that someone has to remember, so the 90-day reminder matters.
+
+Ways to automate it, roughly in the order I'd adopt them:
+
+- **Event-driven pipeline.** An EventBridge rule on the Secrets Manager rotation events (`RotationSucceeded`, or `PutSecretValue` from CloudTrail) starts a CI job. The job runs `scripts/secret-checksum.sh` and opens a pull request, and Argo CD or the CD pipeline applies it after the merge. The rotation keeps its review and git record without anyone having to remember. The CI role only needs `ListSecretVersionIds` and access to the cluster, never the password. This is the one I'd pick once Argo CD is in place.
+- **Reloader.** The stakater controller watches the Secret and does a rolling restart as soon as External Secrets changes it. It's the least work, but the restart isn't in git, and it fires on any change to the Secret, including a mistaken one.
+- **The app re-reads the password.** Mount the Secret as a file instead of an environment variable. The kubelet refreshes the file within about a minute, and the app reconnects with the new value when Redis rejects a login. There's no restart at all, but it needs a change in the app's Redis client. It's the best long-term option and the only one that isn't purely platform work.
+
 ### SECRET_CHECKSUM holds the AWS version ID, not a hash
 The obvious value is a SHA-256 of the Secret's data, and that's what I'd avoid. A hash is derived from the password, so anyone who can read it can guess passwords offline until one matches. SHA-256 is fast and an unsalted hash makes a weak or reused password fall quickly; equal hashes would also show that two environments share a password. And it would be readable in more places than the Secret itself: git history forever, and the Deployment, ReplicaSet and Pod objects, which far more people can `get` than can read Secrets.
 
