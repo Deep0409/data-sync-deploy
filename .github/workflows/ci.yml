@@ -1,0 +1,24 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# The jobs only read the repo.
+permissions:
+  contents: read
+
+jobs:
+  helm-kustomize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Pinned so a new Helm release can't change lint results or the
+      # rendered base without a change in this repo. Bump it deliberately.
+      - uses: azure/setup-helm@v4
+        with:
+          version: v4.3.1
+      - run: make lint template
+      - name: Kustomize base must match the chart
+        run: make check-render
+      - run: make kustomize > /dev/null
