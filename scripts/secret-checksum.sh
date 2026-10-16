@@ -70,6 +70,9 @@ sync_external_secret() {
 if [[ "${1:-}" == "--version" ]]; then
   [[ -n "${2:-}" ]] || { echo "usage: $0 [--version ID]" >&2; exit 2; }
   version_id="$2"
+  # Secrets Manager version IDs are UUIDs. Checking also keeps stray characters
+  # out of the sed expression below.
+  [[ "${version_id}" =~ ^[0-9a-fA-F-]{32,64}$ ]] || { echo "not a version ID: ${version_id}" >&2; exit 2; }
 else
   version_id="$(current_version_id)"
   [[ -n "${version_id}" && "${version_id}" != "None" ]] || { echo "no AWSCURRENT version for ${aws_secret_id}" >&2; exit 1; }
