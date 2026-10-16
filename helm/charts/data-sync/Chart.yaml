@@ -7,4 +7,5 @@ version: 0.2.0
 # appVersion is the default image tag when image.tag is empty.
 appVersion: "1.0.0"
 maintainers:
-  - name: BrightEdge Platform Team
+  - name: Deepanshu Pariyani
+    email: pariyanideepanshu@gmail.com
