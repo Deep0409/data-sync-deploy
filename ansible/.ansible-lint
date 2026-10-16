@@ -1,0 +1,8 @@
+---
+profile: production
+exclude_paths:
+  - .cache/
+skip_list:
+  # The team's be-{service} naming uses a hyphen, which this rule only allows
+  # as an underscore. Skipping the rule is cheaper than renaming the convention.
+  - role-name

@@ -1,0 +1,65 @@
+---
+# Clone as the service user so the files are owned correctly from the start.
+# force: false means local changes on the host are never silently thrown away.
+- name: Clone or update the data-sync repository
+  ansible.builtin.git:
+    repo: "{{ data_sync_repo_url }}"
+    dest: "{{ data_sync_home }}"
+    version: "{{ data_sync_repo_version }}"
+    update: true
+    force: false
+    # Trust the git server's key on first contact only; a changed key later
+    # still fails the clone.
+    accept_newhostkey: true
+  become: true
+  become_user: "{{ data_sync_user }}"
+  notify: Restart data-sync
+
+- name: Install Python dependencies into the virtualenv
+  ansible.builtin.pip:
+    requirements: "{{ data_sync_home }}/{{ data_sync_requirements_file }}"
+    virtualenv: "{{ data_sync_venv }}"
+    # Python 3.9 ships venv, so there's no need to install the virtualenv package.
+    virtualenv_command: "{{ data_sync_python_bin }} -m venv"
+  become: true
+  become_user: "{{ data_sync_user }}"
+  notify: Restart data-sync
+
+# The password goes in a root-owned file rather than the unit, because unit
+# files are world-readable and visible in `systemctl show`.
+# no_log keeps it out of Ansible's output and diffs.
+- name: Write the secret environment file
+  ansible.builtin.template:
+    src: secret.env.j2
+    dest: "{{ data_sync_env_file }}"
+    owner: root
+    group: "{{ data_sync_group }}"
+    mode: "0640"
+  become: true
+  no_log: true
+  when: data_sync_redis_password | length > 0
+  notify: Restart data-sync
+
+- name: Install the systemd unit
+  ansible.builtin.template:
+    src: data-sync.service.j2
+    dest: "/etc/systemd/system/{{ data_sync_service_name }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify:
+    - Reload systemd
+    - Restart data-sync
+
+# Handlers normally wait until the end of the play. Run them now so the unit is
+# reloaded and restarted before we check the service state below.
+- name: Run pending handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start data-sync
+  ansible.builtin.systemd:
+    name: "{{ data_sync_service_name }}"
+    enabled: true
+    state: started
+  become: true

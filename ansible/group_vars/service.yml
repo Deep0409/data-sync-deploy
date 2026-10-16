@@ -1,0 +1,11 @@
+---
+# Variables for every host in the `service` group.
+data_sync_app_env: production
+# A VM can't resolve cluster DNS (*.svc.cluster.local), so point at Redis
+# outside Kubernetes: a Route 53 private record for the ElastiCache endpoint.
+data_sync_redis_host: redis.data-sync.internal
+data_sync_log_level: INFO
+
+# data_sync_redis_password does not belong here. Put it in Ansible Vault:
+# turn this file into a group_vars/service/ directory and add an encrypted
+# vault.yml next to a vars.yml holding the values above.

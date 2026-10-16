@@ -1,0 +1,18 @@
+---
+# Deploys data-sync to the hosts in the `service` group.
+#
+#   ansible-playbook playbooks/playbook-data-sync.yml --check --diff
+#   ansible-playbook playbooks/playbook-data-sync.yml --tags install
+#   ansible-playbook playbooks/playbook-data-sync.yml --tags deploy -l svc-01.example.internal
+#
+# The be_role == 'service' check lives inside the role, so a host of another
+# role that ends up in this group is skipped rather than broken.
+- name: Deploy data-sync to service hosts
+  hosts: service
+  gather_facts: true
+  # One host at a time, and stop if one fails, so a bad release only ever
+  # takes down a single host.
+  serial: 1
+  max_fail_percentage: 0
+  roles:
+    - role: be-data-sync

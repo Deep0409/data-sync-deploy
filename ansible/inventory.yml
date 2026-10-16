@@ -1,0 +1,17 @@
+---
+# Static example inventory. On AWS use inventory.aws_ec2.yml instead, which
+# builds the same groups from EC2 tags.
+# This file sits next to group_vars/ on purpose, so group_vars/service.yml is
+# picked up automatically.
+all:
+  children:
+    service:
+      hosts:
+        svc-01.example.internal:
+          be_role: service
+        svc-02.example.internal:
+          be_role: service
+    clickhouse:
+      hosts:
+        ch-01.example.internal:
+          be_role: database    # not in `service`, so this role never touches it

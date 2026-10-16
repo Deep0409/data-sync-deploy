@@ -1,0 +1,18 @@
+---
+# Both phases only run on hosts where be_role == 'service', so applying the
+# role to the wrong host is harmless.
+#
+# Tags:
+#   install  packages, service user, directories (rarely changes)
+#   deploy   code, virtualenv, config, service (changes every release)
+# `--tags deploy` on its own is fine on a host that is already installed.
+
+- name: Install prerequisites
+  ansible.builtin.import_tasks: install.yml
+  when: be_role | default('') == data_sync_required_be_role
+  tags: [install]
+
+- name: Deploy data-sync
+  ansible.builtin.import_tasks: deploy.yml
+  when: be_role | default('') == data_sync_required_be_role
+  tags: [deploy]

@@ -1,0 +1,44 @@
+---
+# "yum" on Rocky/CentOS 8 is dnf under the hood (/usr/bin/yum links to dnf).
+# ansible-core 2.17+ dropped the yum module, so use dnf directly: same
+# packages, same repos, and it works on both old and new Ansible.
+- name: Install Python 3.9, pip and git
+  ansible.builtin.dnf:
+    name: "{{ data_sync_python_packages }}"
+    state: present
+  become: true
+
+- name: Create service group
+  ansible.builtin.group:
+    name: "{{ data_sync_group }}"
+    system: true
+    state: present
+  become: true
+
+# A system user with no login shell: the service never needs an interactive session.
+- name: Create service user
+  ansible.builtin.user:
+    name: "{{ data_sync_user }}"
+    group: "{{ data_sync_group }}"
+    system: true
+    shell: /sbin/nologin
+    home: "{{ data_sync_home }}"
+    create_home: false
+    state: present
+  become: true
+
+# The config dir is owned by root and not writable by the service, so a
+# compromised app can't rewrite its own credentials.
+- name: Create application and config directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ data_sync_group }}"
+    mode: "{{ item.mode }}"
+  become: true
+  loop:
+    - { path: "{{ data_sync_home }}", owner: "{{ data_sync_user }}", mode: "0755" }
+    - { path: "{{ data_sync_config_dir }}", owner: root, mode: "0750" }
+  loop_control:
+    label: "{{ item.path }}"

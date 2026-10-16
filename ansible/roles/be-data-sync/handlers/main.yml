@@ -1,0 +1,13 @@
+---
+# Handlers run in the order they are defined here, so a daemon-reload always
+# happens before the restart when a task notifies both.
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+  become: true
+
+- name: Restart data-sync
+  ansible.builtin.systemd:
+    name: "{{ data_sync_service_name }}"
+    state: restarted
+  become: true

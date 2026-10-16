@@ -1,0 +1,48 @@
+---
+# Role defaults (lowest precedence). Override per environment in
+# group_vars/service.yml. Everything is prefixed data_sync_ so it can't clash
+# with variables from other be-* roles.
+
+# The role does nothing on hosts whose be_role differs from this.
+data_sync_required_be_role: service
+
+# --- Application settings, rendered into the systemd unit ---
+data_sync_app_env: staging              # staging | production
+data_sync_redis_host: 127.0.0.1
+data_sync_redis_port: 6379
+data_sync_log_level: INFO               # INFO | DEBUG
+data_sync_workers: 4
+data_sync_max_connections: 100
+data_sync_listen_host: 0.0.0.0
+data_sync_listen_port: 8080
+
+# REDIS_PASSWORD: keep it in Ansible Vault, never in plain vars. When it is
+# empty no secret env file is written and the unit omits EnvironmentFile.
+data_sync_redis_password: ""
+
+# --- Runtime (Rocky/CentOS 8, from the AppStream repo) ---
+data_sync_python_packages:
+  - python39
+  - python39-pip
+  - python39-devel                      # headers, for wheels that compile
+  - git
+data_sync_python_bin: /usr/bin/python3.9
+
+# --- Source code ---
+# The clone runs as data_sync_user, so that user needs read access: a deploy
+# key in its ~/.ssh, or an HTTPS URL with a read-only token from Vault.
+data_sync_repo_url: git@git.example.com:brightedge/data-sync.git
+data_sync_repo_version: main            # in production use a tag or SHA, not a branch
+data_sync_requirements_file: requirements.txt   # relative to the repo root
+
+# --- Layout on the host ---
+data_sync_home: /srv/data-sync
+data_sync_venv: "{{ data_sync_home }}/venv"
+data_sync_config_dir: /etc/data-sync
+data_sync_env_file: "{{ data_sync_config_dir }}/secret.env"
+
+# --- Service identity ---
+data_sync_user: data-sync
+data_sync_group: data-sync
+data_sync_service_name: data-sync
+data_sync_app_module: app.main:app      # what uvicorn runs, inside the repo
