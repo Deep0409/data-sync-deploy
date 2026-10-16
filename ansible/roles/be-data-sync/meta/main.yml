@@ -1,0 +1,13 @@
+---
+galaxy_info:
+  role_name: be_data_sync
+  namespace: brightedge
+  author: Deepanshu Pariyani
+  description: Deploy the data-sync FastAPI service on a CentOS/Rocky 8 VM under systemd.
+  license: proprietary
+  min_ansible_version: "2.14"
+  platforms:
+    - name: EL
+      versions:
+        - "8"
+dependencies: []

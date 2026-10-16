@@ -1,0 +1,24 @@
+---
+# AWS dynamic inventory. The file name has to end in aws_ec2.yml or Ansible
+# won't recognise it.
+#
+# Needs: ansible-galaxy collection install amazon.aws, and boto3.
+#   ansible-inventory -i inventory.aws_ec2.yml --graph
+#
+# Every instance is expected to carry a be_role tag (service, database, ...),
+# so the groups come from tags and not from a hand-maintained host list.
+plugin: amazon.aws.aws_ec2
+regions:
+  - us-east-1
+filters:
+  instance-state-name: running
+  "tag:be_role": service
+keyed_groups:
+  # Tag be_role=service creates a group called "service" (no prefix).
+  - key: tags.be_role
+    prefix: ""
+    separator: ""
+hostnames:
+  - private-ip-address     # connect over the VPC (VPN, bastion or SSM port-forward)
+compose:
+  be_role: tags.be_role

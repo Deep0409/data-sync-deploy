@@ -1,0 +1,43 @@
+{{ ansible_managed | comment }}
+[Unit]
+Description=BrightEdge data-sync ({{ data_sync_app_env }})
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ data_sync_user }}
+Group={{ data_sync_group }}
+WorkingDirectory={{ data_sync_home }}
+
+Environment=APP_ENV={{ data_sync_app_env }}
+Environment=REDIS_HOST={{ data_sync_redis_host }}
+Environment=REDIS_PORT={{ data_sync_redis_port }}
+Environment=LOG_LEVEL={{ data_sync_log_level }}
+Environment=WORKERS={{ data_sync_workers }}
+Environment=MAX_CONNECTIONS={{ data_sync_max_connections }}
+{% if data_sync_redis_password | length > 0 %}
+# REDIS_PASSWORD is read from a root-owned 0640 file, not set here, because
+# unit files are readable by every user on the host.
+EnvironmentFile={{ data_sync_env_file }}
+{% endif %}
+
+ExecStart={{ data_sync_venv }}/bin/uvicorn {{ data_sync_app_module }} \
+  --host {{ data_sync_listen_host }} --port {{ data_sync_listen_port }} \
+  --workers {{ data_sync_workers }} --log-level {{ data_sync_log_level | lower }}
+
+# Come back after a crash, but wait a few seconds so a broken release
+# doesn't spin in a tight restart loop.
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+# Hardening: the service can only write to its own directory.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths={{ data_sync_home }}
+
+[Install]
+WantedBy=multi-user.target
