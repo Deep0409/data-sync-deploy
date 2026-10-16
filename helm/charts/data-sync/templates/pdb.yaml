@@ -7,10 +7,16 @@ metadata:
   labels:
     {{- include "data-sync.labels" . | nindent 4 }}
 spec:
-  # Voluntary disruptions (node drains, EKS node group upgrades) must always
-  # leave at least this many pods running. Note that with a single replica this
-  # blocks drains entirely, which is why it is off in the default values.
+  # Limits how many pods voluntary disruptions (node drains, EKS node group
+  # upgrades) can take down at once. Kubernetes accepts only one of the two
+  # fields, so maxUnavailable wins when it is set. maxUnavailable suits an
+  # autoscaled Deployment: minAvailable: 1 is fine at 3 pods but would let a
+  # drain evict 19 of 20.
+  {{- if .Values.pdb.maxUnavailable }}
+  maxUnavailable: {{ .Values.pdb.maxUnavailable }}
+  {{- else }}
   minAvailable: {{ .Values.pdb.minAvailable }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "data-sync.selectorLabels" . | nindent 6 }}

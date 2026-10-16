@@ -48,7 +48,7 @@ The overlay uses `DoNotSchedule` with `maxSkew: 1`. With at least 3 replicas on 
 The brief asks for CPU, so that's what the chart has, plus scale-up/down behaviour and a 60% target in production. Better signals through KEDA are covered in `DESIGN.md`, but not built, since they need extra cluster components.
 
 ### PDB is off by default
-`minAvailable: 1` with one replica makes node drains hang, so it's off in `values.yaml` and on in staging and production.
+`minAvailable: 1` with one replica makes node drains hang, so it's off in `values.yaml` and on in staging and production. Staging has a fixed 2 replicas and keeps `minAvailable: 1`. Production uses `maxUnavailable: 1` instead, because the HPA can take it to 20 pods, and `minAvailable: 1` would then let a multi-node drain evict all but one.
 
 ### ServiceMonitor is on by default
 It fails to install without the Prometheus Operator CRDs, but the platform uses kube-prometheus-stack, so that's the sensible default. Use `--set serviceMonitor.enabled=false` on a bare cluster.

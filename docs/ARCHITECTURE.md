@@ -11,7 +11,7 @@ flowchart LR
     SVC --> P3[Pod AZ-c]
     HPA[HPA 3-20, CPU 60%] -.scales.-> D[Deployment]
     D --> P1 & P2 & P3
-    PDB[PDB minAvailable 1] -.guards.-> D
+    PDB[PDB maxUnavailable 1] -.guards.-> D
     P1 & P2 & P3 -->|port 6379, password from Secret| R[(Redis)]
     SM[ServiceMonitor 30s] -.scrapes /metrics.-> P1 & P2 & P3
   end

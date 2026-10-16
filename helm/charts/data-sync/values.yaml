@@ -108,6 +108,7 @@ autoscaling:
 pdb:
   enabled: false
   minAvailable: 1
+  maxUnavailable: ""        # set it (e.g. 1) to use it instead of minAvailable
 
 # ---- Prometheus Operator ----
 serviceMonitor:

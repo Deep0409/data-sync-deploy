@@ -20,7 +20,7 @@ Pass `values.yaml` first and the environment file second. Later files win, and `
 | `LOG_LEVEL` | DEBUG | INFO | INFO |
 | `REDIS_HOST` | `redis-master` | `redis-master.data-sync-staging.svc.cluster.local` | `redis-master.data-sync.svc.cluster.local` |
 | resources | 250m / 256Mi up to 1 CPU / 512Mi | same as default | 2 CPU / 2Gi, requests = limits |
-| PDB | off | on | on |
+| PDB | off | `minAvailable: 1` | `maxUnavailable: 1` |
 | Secret | chart creates it (dev password) | chart creates it, password passed at deploy | external (`data-sync-redis`) |
 
 The PDB is off by default because `minAvailable: 1` with a single replica blocks node drains.
@@ -125,6 +125,6 @@ The script needs `secretsmanager:ListSecretVersionIds` on the secret and permiss
 | `config.*` | see `values.yaml` | `config.extra` adds more non-sensitive variables |
 | `secret.create`, `secret.existingSecret`, `secret.redisPassword` | `true`, `""`, dev value | |
 | `autoscaling.*` | off | `minReplicas`, `maxReplicas`, `targetCPUUtilizationPercentage`, `behavior` |
-| `pdb.enabled`, `pdb.minAvailable` | `false`, `1` | |
+| `pdb.enabled`, `pdb.minAvailable`, `pdb.maxUnavailable` | `false`, `1`, unset | `maxUnavailable` takes precedence when set |
 | `serviceMonitor.*` | on, 30s | `labels.release` has to match Prometheus' `serviceMonitorSelector` |
 | `nodeSelector`, `tolerations`, `affinity`, `topologySpreadConstraints`, `priorityClassName` | empty | scheduling hooks, see `docs/DESIGN.md` |

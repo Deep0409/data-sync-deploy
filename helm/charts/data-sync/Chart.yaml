@@ -3,7 +3,7 @@ name: data-sync
 description: data-sync FastAPI service with Redis cache, HPA, PDB and a Prometheus ServiceMonitor
 type: application
 # Bump version for any change to templates/ or the values files.
-version: 0.1.0
+version: 0.2.0
 # appVersion is the default image tag when image.tag is empty.
 appVersion: "1.0.0"
 maintainers:
