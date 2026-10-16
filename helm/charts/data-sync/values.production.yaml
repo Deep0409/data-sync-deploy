@@ -33,9 +33,11 @@ resources:
     cpu: "2"
     memory: 2Gi
 
+# One pod down at a time, however far the HPA has scaled. With minAvailable: 1
+# a multi-node drain could leave a single pod serving the whole burst.
 pdb:
   enabled: true
-  minAvailable: 1
+  maxUnavailable: 1
 
 # Prefer different nodes for the pods (soft rule). The hard spread across zones
 # is added by the kustomize overlay in standard/data-sync/production.

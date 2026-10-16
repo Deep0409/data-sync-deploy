@@ -7,17 +7,19 @@ metadata:
   name: data-sync
   namespace: data-sync
   labels:
-    helm.sh/chart: data-sync-0.1.0
+    helm.sh/chart: data-sync-0.2.0
     app.kubernetes.io/name: data-sync
     app.kubernetes.io/instance: data-sync
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: brightedge-platform
 spec:
-  # Voluntary disruptions (node drains, EKS node group upgrades) must always
-  # leave at least this many pods running. Note that with a single replica this
-  # blocks drains entirely, which is why it is off in the default values.
-  minAvailable: 1
+  # Limits how many pods voluntary disruptions (node drains, EKS node group
+  # upgrades) can take down at once. Kubernetes accepts only one of the two
+  # fields, so maxUnavailable wins when it is set. maxUnavailable suits an
+  # autoscaled Deployment: minAvailable: 1 is fine at 3 pods but would let a
+  # drain evict 19 of 20.
+  maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: data-sync
@@ -30,7 +32,7 @@ metadata:
   name: data-sync
   namespace: data-sync
   labels:
-    helm.sh/chart: data-sync-0.1.0
+    helm.sh/chart: data-sync-0.2.0
     app.kubernetes.io/name: data-sync
     app.kubernetes.io/instance: data-sync
     app.kubernetes.io/version: "1.0.0"
@@ -46,7 +48,7 @@ metadata:
   name: data-sync
   namespace: data-sync
   labels:
-    helm.sh/chart: data-sync-0.1.0
+    helm.sh/chart: data-sync-0.2.0
     app.kubernetes.io/name: data-sync
     app.kubernetes.io/instance: data-sync
     app.kubernetes.io/version: "1.0.0"
@@ -68,7 +70,7 @@ metadata:
   name: data-sync
   namespace: data-sync
   labels:
-    helm.sh/chart: data-sync-0.1.0
+    helm.sh/chart: data-sync-0.2.0
     app.kubernetes.io/name: data-sync
     app.kubernetes.io/instance: data-sync
     app.kubernetes.io/version: "1.0.0"
@@ -94,7 +96,7 @@ metadata:
   name: data-sync
   namespace: data-sync
   labels:
-    helm.sh/chart: data-sync-0.1.0
+    helm.sh/chart: data-sync-0.2.0
     app.kubernetes.io/name: data-sync
     app.kubernetes.io/instance: data-sync
     app.kubernetes.io/version: "1.0.0"
@@ -119,7 +121,7 @@ spec:
         # Pods only restart when the pod template changes, so hash the config
         # (and the Secret, when this chart owns it) into annotations. Editing
         # either one then triggers a normal rolling update.
-        checksum/config: 35dbcee9bbfc629e2d9a57a07c4012f44abc073f7e6c2ac8b850e24c2cae21f3
+        checksum/config: d78401acab32e56658f4dfd4c03ceb1bb7e8f516201396adf418089b6fc2f5ff
       labels:
         app.kubernetes.io/name: data-sync
         app.kubernetes.io/instance: data-sync
@@ -219,7 +221,7 @@ metadata:
   name: data-sync
   namespace: data-sync
   labels:
-    helm.sh/chart: data-sync-0.1.0
+    helm.sh/chart: data-sync-0.2.0
     app.kubernetes.io/name: data-sync
     app.kubernetes.io/instance: data-sync
     app.kubernetes.io/version: "1.0.0"
@@ -267,7 +269,7 @@ metadata:
   name: data-sync
   namespace: data-sync
   labels:
-    helm.sh/chart: data-sync-0.1.0
+    helm.sh/chart: data-sync-0.2.0
     app.kubernetes.io/name: data-sync
     app.kubernetes.io/instance: data-sync
     app.kubernetes.io/version: "1.0.0"

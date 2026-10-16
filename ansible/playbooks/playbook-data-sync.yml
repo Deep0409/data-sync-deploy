@@ -2,6 +2,8 @@
 # Deploys data-sync to the hosts in the `service` group.
 #
 #   ansible-playbook playbooks/playbook-data-sync.yml --check --diff
+#     (dry run; only on hosts deployed once, since check mode doesn't clone
+#     the repo and the pip step then finds no requirements.txt)
 #   ansible-playbook playbooks/playbook-data-sync.yml --tags install
 #   ansible-playbook playbooks/playbook-data-sync.yml --tags deploy -l svc-01.example.internal
 #
