@@ -1,0 +1,25 @@
+# Spread pods evenly across availability zones. EKS nodes carry the standard
+# topology.kubernetes.io/zone label (us-east-1a, ...), so nothing here is
+# AWS-specific.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-sync
+spec:
+  template:
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          # Hard rule: losing one zone must never take out most of the pods.
+          # The catch is that pods stay Pending if a zone runs out of capacity.
+          # Use ScheduleAnyway if running somewhere matters more than balance.
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: data-sync
+              app.kubernetes.io/instance: data-sync
+          # Only count pods from the same ReplicaSet, otherwise old pods skew
+          # the numbers during a rollout. Needs Kubernetes 1.27+.
+          matchLabelKeys:
+            - pod-template-hash
