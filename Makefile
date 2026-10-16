@@ -2,7 +2,7 @@ SHELL := /usr/bin/env bash
 CHART   := helm/charts/data-sync
 RELEASE := data-sync
 
-.PHONY: help lint template render check-render kustomize secret-checksum all
+.PHONY: help lint template render check-render kustomize secret-checksum ansible-syntax ansible-lint all
 
 help: ## Show the targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -35,5 +35,11 @@ kustomize: ## Build the production overlay
 secret-checksum: ## Sync ESO, then set SECRET_CHECKSUM to the AWS secret version ID (needs aws + kubectl)
 	bash scripts/secret-checksum.sh
 
-all: lint template render ## Everything CI runs
+ansible-syntax: ## ansible-playbook --syntax-check
+	cd ansible && ansible-playbook playbooks/playbook-data-sync.yml --syntax-check
+
+ansible-lint: ## ansible-lint with the production profile
+	cd ansible && ansible-lint
+
+all: lint template render ansible-syntax ansible-lint ## Everything CI runs
 	@$(MAKE) --no-print-directory kustomize > /dev/null && echo "kustomize build: OK"
