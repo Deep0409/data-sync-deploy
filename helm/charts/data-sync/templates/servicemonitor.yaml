@@ -1,0 +1,30 @@
+{{- /*
+  Needs the Prometheus Operator CRDs. On a cluster without them, install fails
+  with 'no matches for kind "ServiceMonitor"'; set serviceMonitor.enabled=false.
+*/}}
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "data-sync.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "data-sync.labels" . | nindent 4 }}
+    {{- /* Prometheus ignores ServiceMonitors that lack its release label. */}}
+    {{- with .Values.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "data-sync.selectorLabels" . | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.serviceMonitor.interval }}
+      # Must be shorter than the interval.
+      scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+{{- end }}

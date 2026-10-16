@@ -1,0 +1,142 @@
+# Safe defaults, small enough to run on minikube or kind. The staging and
+# production files only list what differs from here; Helm merges maps key by
+# key, but replaces lists whole.
+
+replicaCount: 1             # ignored once autoscaling.enabled is true
+revisionHistoryLimit: 5     # old ReplicaSets kept around for `rollout undo`
+
+image:
+  # Placeholder: point this at the real ECR repository. EKS nodes pull
+  # same-account ECR images through the node IAM role, so no pull secret needed.
+  repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/brightedge/data-sync
+  tag: ""                   # empty means Chart.appVersion
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  # To give the pods an AWS identity (IRSA):
+  #   eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/data-sync
+  # Not needed today, the app only talks to Redis.
+  annotations: {}
+
+# ---- Application settings, rendered into the ConfigMap ----
+config:
+  appEnv: staging           # staging | production
+  logLevel: DEBUG           # DEBUG | INFO; verbose by default for local work
+  redisHost: redis-master   # a Redis Service in the same namespace ("local redis")
+  redisPort: 6379
+  workers: 4
+  maxConnections: 100       # per pod; keep (this x max replicas) under Redis maxclients
+  extra: {}                 # any further non-sensitive env vars
+
+# ---- REDIS_PASSWORD ----
+secret:
+  # true:  the chart renders the Secret from redisPassword (dev and staging).
+  # false: the Secret already exists (External Secrets, Sealed Secrets, ...)
+  #        and is referenced by existingSecret. This is what production uses.
+  create: true
+  existingSecret: ""
+  key: REDIS_PASSWORD
+  # Dev only, so the defaults work against a throwaway local Redis.
+  # Never put a real password in a values file.
+  redisPassword: dev-only-change-me
+
+extraEnv: []                # full EnvVar entries, for anything not covered above
+
+service:
+  port: 8080
+
+rollingUpdate:
+  maxSurge: 25%             # extra pods allowed during a rollout (maxUnavailable is fixed at 0)
+
+terminationGracePeriodSeconds: 30
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+probes:
+  startup:                  # gives the app up to 60s (2s x 30) to come up
+    periodSeconds: 2
+    failureThreshold: 30
+  liveness:                 # restarts the container: be patient (3 x 10s)
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+  readiness:                # only removes the pod from the Service: check often
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+# ---- Autoscaling ----
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70   # of resources.requests.cpu
+  # Scale up fast so bursts don't queue; scale down slowly so we don't flap
+  # and cause Redis reconnect storms.
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      selectPolicy: Max     # take whichever policy below adds more pods
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 4
+          periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 25
+          periodSeconds: 60
+
+# Off by default: with one replica, minAvailable: 1 would block every node drain.
+# Staging and production turn it on.
+pdb:
+  enabled: false
+  minAvailable: 1
+
+# ---- Prometheus Operator ----
+serviceMonitor:
+  enabled: true             # set to false on a cluster without the Operator CRDs
+  interval: 30s
+  scrapeTimeout: 10s
+  labels:
+    release: kube-prometheus-stack   # must match Prometheus' serviceMonitorSelector
+
+# ---- Scheduling hooks (empty by default; see docs/DESIGN.md for how we use them) ----
+podAnnotations: {}
+podLabels: {}
+priorityClassName: ""
+nodeSelector: {}
+tolerations: []
+affinity: {}
+topologySpreadConstraints: []
+
+# Run as a non-root user with a read-only filesystem and no extra capabilities.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]

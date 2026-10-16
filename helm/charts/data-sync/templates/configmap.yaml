@@ -1,0 +1,19 @@
+{{- /* Non-sensitive settings only. REDIS_PASSWORD lives in the Secret. */}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "data-sync.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "data-sync.labels" . | nindent 4 }}
+data:
+  # ConfigMap values must be strings, hence the quotes on the numbers.
+  APP_ENV: {{ .Values.config.appEnv | quote }}
+  REDIS_HOST: {{ .Values.config.redisHost | quote }}
+  REDIS_PORT: {{ .Values.config.redisPort | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  WORKERS: {{ .Values.config.workers | quote }}
+  MAX_CONNECTIONS: {{ .Values.config.maxConnections | quote }}
+  {{- range $key, $value := .Values.config.extra }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

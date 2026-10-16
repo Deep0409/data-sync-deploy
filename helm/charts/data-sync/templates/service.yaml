@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "data-sync.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "data-sync.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    # The ServiceMonitor scrapes this port by name, so keep the name in sync
+    # with servicemonitor.yaml.
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+  selector:
+    {{- include "data-sync.selectorLabels" . | nindent 4 }}
