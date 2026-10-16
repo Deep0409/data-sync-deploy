@@ -1,0 +1,7 @@
+.DS_Store
+.venv/
+.cache/
+*.retry
+# Secrets must never be committed
+*.vault-pass
+redis-password.txt
