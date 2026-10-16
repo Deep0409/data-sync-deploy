@@ -48,4 +48,4 @@ Upgrades, rollbacks and a local smoke test are in the [chart README](helm/charts
 
 - The ECR image `123456789012.dkr.ecr.us-east-1.amazonaws.com/brightedge/data-sync` is a placeholder, and the app entry point `app.main:app` is assumed.
 - Redis is not a sub-chart. Install Bitnami Redis separately for local development (chart README).
-- Checked with `helm lint`, `helm template`, `kubectl kustomize`, `ansible-lint` and `--syntax-check`. Not run on a live cluster or VM. More in [`docs/DECISIONS.md`](docs/DECISIONS.md#whats-not-done).
+- Checked with `helm lint`, `helm template`, `kubectl kustomize`, `ansible-lint` and `--syntax-check`. Not run on a live cluster or VM.
